@@ -1,12 +1,13 @@
-<!-- @dsCard group="Website" viewport="1280x900" name="CharAtlas — Website" subtitle="Company site, EN/IT: coordination-layer story, matching engine, affiliations (Carbon13 · TU Delft · PoliMi), biochar page + early-access landing." -->
+<!-- @dsCard group="Website" viewport="1280x900" name="CharAtlas — Live demo" subtitle="Live demo page: break-even calculator and the screening + value engines running on one reference batch. EN/IT." -->
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CharAtlas — Data infrastructure for European biochar</title>
+<title>Live demo — the engines, running · CharAtlas</title>
 <link rel="icon" href="../assets/logomark-green.svg">
 <link rel="stylesheet" href="../styles.css">
 <link rel="stylesheet" href="../ui_kits/website/site.css">
+<link rel="stylesheet" href="../ui_kits/terminal/terminal.css">
 <link rel="stylesheet" href="./beta.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
@@ -15,31 +16,20 @@
 <script src="./i18n.js"></script>
 <script src="./engine.js"></script>
 <script src="./motion.js"></script>
-<script src="./image-slot.js"></script>
 <script type="text/babel" src="../ds-runtime.jsx"></script>
 <script type="text/babel" src="./brand.jsx"></script>
-<script type="text/babel" src="./schematics.jsx"></script>
 <script type="text/babel" src="./sections.jsx"></script>
-<script type="module" src="./biochar-3d.js"></script>
+<script type="text/babel" src="./apps-engines.jsx"></script>
+<script type="text/babel" src="./apps-terminal.jsx"></script>
+<script type="text/babel" src="./applications.jsx"></script>
 <style>html,body{margin:0}</style>
 </head><body>
 <template id="__bundler_thumbnail" data-bg-color="#0f1a14">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
     <rect width="1200" height="800" fill="#0f1a14"/>
-    <g stroke="#1f3a2c" stroke-width="2">
-      <path d="M0 200 H1200 M0 400 H1200 M0 600 H1200 M300 0 V800 M600 0 V800 M900 0 V800"/>
-    </g>
-    <g fill="none" stroke="#f2ede4" stroke-width="18">
-      <path d="M440 500 V440 H500"/>
-      <path d="M700 440 H760 V500"/>
-      <path d="M760 260 V200 H700"/>
-      <path d="M500 200 H440 V260"/>
-    </g>
-    <g fill="none" stroke="#f2ede4" stroke-width="9">
-      <path d="M600 190 V510"/>
-      <path d="M430 350 H770"/>
-    </g>
-    <circle cx="600" cy="350" r="26" fill="#4ade80"/>
+    <g stroke="#1f3a2c" stroke-width="2"><path d="M0 200 H1200 M0 400 H1200 M0 600 H1200 M300 0 V800 M600 0 V800 M900 0 V800"/></g>
+    <path d="M240 600 L440 470 L640 500 L840 300 L960 240" fill="none" stroke="#4ade80" stroke-width="18" stroke-linejoin="round"/>
+    <circle cx="960" cy="240" r="34" fill="#f2ede4"/>
   </svg>
 </template>
 <div id="root"></div>
@@ -48,21 +38,12 @@
     const t = window.useT();
     const [reqOpen, setReqOpen] = React.useState(false);
     React.useEffect(() => { window.lucide && window.lucide.createIcons(); });
-    React.useEffect(() => { document.title = t('meta.title'); });
-    const openReq = () => setReqOpen(true);
+    React.useEffect(() => { document.title = t('apps.metaTitle'); });
     return (
       <div className="site" id="top" data-surface="white">
-        <window.SiteNav onRequest={openReq} />
-        <window.SiteHero onRequest={openReq} />
-        <window.SiteProblem />
-        <window.SiteMatching />
-        <window.SitePipeline />
-        <window.SiteBand />
-        <window.SiteAffil />
-        <window.SiteProducts />
-        <window.SiteFinalCta onRequest={openReq} />
-        <window.SiteFooter onRequest={openReq} />
-        <div className="site-hero__grid cax-mapgrid" style={{ left: '56px', top: '197px', position: 'absolute', pointerEvents: 'none' }}></div>
+        <window.SiteNav here="apps" onRequest={() => setReqOpen(true)} />
+        <window.AppsPage />
+        <window.SiteFooter onRequest={() => setReqOpen(true)} />
         <window.RequestAccessModal open={reqOpen} onClose={() => setReqOpen(false)} />
       </div>
     );
