@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TerraMatch — Biochar × Vineyard Matching Engine (MVP)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Spline+Sans+Mono:wght@400;500;600&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1c1a14; --paper:#f4f0e6; --paper2:#ebe5d6; --line:#cabf a3;
+  --line:#c9bfa3; --soil:#6b4f2a; --vine:#3d5a3a; --vine2:#2f4a2d;
+  --clay:#a8603a; --gold:#b8862b; --rust:#9c3b22; --sky:#3f6f8f;
+  --good:#3d6b3a; --mid:#b8862b; --bad:#9c3b22;
+  --shadow:0 1px 0 #fff6, 0 2px 8px #2a200f1a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Archivo',sans-serif;
+  line-height:1.5;
+  background-image:radial-gradient(#0000000a 1px,transparent 1px);
+  background-size:18px 18px;
+}
+.wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+
+/* header */
+header{border-bottom:2px solid var(--ink);background:var(--paper);position:sticky;top:0;z-index:50}
+.hbar{display:flex;align-items:baseline;justify-content:space-between;padding:14px 24px;max-width:1140px;margin:0 auto;flex-wrap:wrap;gap:8px}
+.logo{font-family:'Fraunces',serif;font-weight:900;font-size:26px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.logo .mk{width:26px;height:26px;border:2px solid var(--ink);border-radius:50%;position:relative;display:inline-block}
+.logo .mk::after{content:"";position:absolute;inset:5px;background:var(--vine);border-radius:50%}
+.tagline{font-family:'Spline Sans Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--soil)}
+
+/* hero */
+.hero{padding:48px 0 28px}
+.kicker{font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--clay);margin-bottom:14px}
+h1.title{font-family:'Fraunces',serif;font-weight:900;font-size:clamp(34px,6vw,62px);line-height:.98;letter-spacing:-.025em;max-width:14ch}
+h1.title em{font-style:italic;color:var(--vine)}
+.lead{margin-top:18px;max-width:62ch;font-size:17px;color:#3a342a}
+.disclaim{margin-top:14px;font-family:'Spline Sans Mono',monospace;font-size:11px;color:var(--soil);border-left:3px solid var(--gold);padding:6px 12px;background:#fff5d633;max-width:70ch}
+
+/* layout */
+.grid{display:grid;grid-template-columns:380px 1fr;gap:32px;padding:20px 0 80px;align-items:start}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+/* panel */
+.panel{background:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow)}
+.panel.form{position:sticky;top:84px}
+@media(max-width:880px){.panel.form{position:static}}
+.panel h2{font-family:'Fraunces',serif;font-weight:600;font-size:20px;padding:14px 18px;border-bottom:2px solid var(--ink);display:flex;justify-content:space-between;align-items:center}
+.panel h2 .n{font-family:'Spline Sans Mono',monospace;font-size:12px;background:var(--ink);color:var(--paper);width:24px;height:24px;display:grid;place-items:center;border-radius:50%}
+.body{padding:18px}
+.fld{margin-bottom:16px}
+.fld label{display:block;font-family:'Spline Sans Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--soil);margin-bottom:6px}
+.fld label .opt{color:#a89a78;text-transform:none;letter-spacing:0}
+select,input[type=number]{width:100%;padding:10px 12px;border:1.5px solid var(--ink);background:var(--paper2);font-family:'Archivo';font-size:14px;color:var(--ink);border-radius:0}
+select:focus,input:focus{outline:2px solid var(--vine);outline-offset:1px}
+.seg{display:flex;border:1.5px solid var(--ink)}
+.seg button{flex:1;padding:9px 4px;background:var(--paper2);border:none;border-right:1.5px solid var(--ink);font-family:'Spline Sans Mono',monospace;font-size:11px;cursor:pointer;color:var(--ink);transition:.12s}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--vine);color:var(--paper)}
+.hint{font-size:11px;color:#7d7259;margin-top:5px;font-style:italic}
+.run{width:100%;margin-top:6px;padding:15px;background:var(--ink);color:var(--paper);border:none;font-family:'Fraunces',serif;font-weight:600;font-size:17px;cursor:pointer;letter-spacing:.01em;transition:.15s}
+.run:hover{background:var(--vine2)}
+
+/* results */
+.results .empty{padding:60px 28px;text-align:center;color:#8a7e62;font-family:'Spline Sans Mono',monospace;font-size:13px;line-height:1.8}
+.summary{padding:14px 18px;border-bottom:2px dashed var(--line);font-family:'Spline Sans Mono',monospace;font-size:12px;color:var(--soil);display:flex;gap:18px;flex-wrap:wrap}
+.summary b{color:var(--ink)}
+
+/* card */
+.card{border-bottom:2px solid var(--ink);padding:20px 18px;position:relative;animation:rise .5s both}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.card.blocked{opacity:.72;background:repeating-linear-gradient(45deg,#0000,#0000 9px,#9c3b2208 9px,#9c3b2208 18px)}
+.crow{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.cname{font-family:'Fraunces',serif;font-weight:600;font-size:19px;line-height:1.1}
+.cmeta{font-family:'Spline Sans Mono',monospace;font-size:11px;color:var(--soil);margin-top:5px;line-height:1.7}
+.badge{display:inline-block;font-family:'Spline Sans Mono',monospace;font-size:10px;padding:2px 7px;border:1px solid currentColor;border-radius:20px;margin:2px 4px 2px 0;letter-spacing:.04em}
+.b-cert{color:var(--vine)} .b-self{color:var(--gold)} .b-org{color:var(--vine);background:#3d5a3a14}
+.b-block{color:var(--bad)}
+
+/* score dial */
+.score{text-align:center;min-width:96px}
+.dial{font-family:'Fraunces',serif;font-weight:900;font-size:46px;line-height:1}
+.score small{font-family:'Spline Sans Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;display:block;margin-top:2px;color:var(--soil)}
+.conf{font-family:'Spline Sans Mono',monospace;font-size:10px;margin-top:4px}
+
+/* mechanism bars */
+.mechs{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px 22px}
+@media(max-width:520px){.mechs{grid-template-columns:1fr}}
+.mech{font-family:'Spline Sans Mono',monospace;font-size:11px}
+.mech .ml{display:flex;justify-content:space-between;color:var(--soil);margin-bottom:3px}
+.track{height:7px;background:var(--paper2);border:1px solid var(--line);position:relative;overflow:hidden}
+.track .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--soil)}
+.fillp{position:absolute;left:50%;top:0;bottom:0;background:var(--good)}
+.filln{position:absolute;right:50%;top:0;bottom:0;background:var(--bad)}
+
+/* outputs row */
+.outs{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.outs{grid-template-columns:1fr}}
+.out{border:1.5px solid var(--ink);padding:11px 13px;background:var(--paper2)}
+.out .ot{font-family:'Spline Sans Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--soil)}
+.out .ov{font-family:'Fraunces',serif;font-weight:600;font-size:21px;margin-top:3px}
+.out .os{font-size:11px;color:#7d7259;margin-top:2px;font-style:italic}
+
+.why{margin-top:14px;font-size:13px;color:#3a342a;border-top:1px dashed var(--line);padding-top:12px}
+.why b{font-family:'Spline Sans Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--clay)}
+.range{font-family:'Spline Sans Mono',monospace;font-size:10px;color:var(--soil);margin-top:2px}
+.lever{margin-top:10px;font-size:13px;color:#2f4a2d;background:#3d5a3a12;border-left:3px solid var(--vine);padding:8px 12px}
+.lever b{font-family:'Spline Sans Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--vine2)}
+.confnote{margin-top:8px;font-family:'Spline Sans Mono',monospace;font-size:11px;color:#7d7259;line-height:1.6}
+.confnote b{color:var(--soil);text-transform:uppercase;letter-spacing:.06em}
+.blockmsg{margin-top:12px;font-family:'Spline Sans Mono',monospace;font-size:12px;color:var(--bad);border:1px solid var(--bad);padding:9px 12px;background:#9c3b2208}
+
+footer{border-top:2px solid var(--ink);padding:26px 0;font-family:'Spline Sans Mono',monospace;font-size:11px;color:var(--soil);line-height:1.9}
+.tag2{display:inline-block;background:var(--ink);color:var(--paper);padding:1px 6px;font-size:10px;letter-spacing:.1em}
+</style>
+</head>
+<body>
+<header>
+  <div class="hbar">
+    <div class="logo"><span class="mk"></span>TerraMatch</div>
+    <div class="tagline">Biochar × Vineyard Matching Engine · MVP v1.5</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="kicker">Decision-support prototype · dummy data</div>
+    <h1 class="title">Match the right <em>biochar</em> to your vineyard.</h1>
+    <p class="lead">Enter your vineyard's soil, climate and water context. The engine screens every listed biochar against EBC agricultural compliance, then scores the survivors on vineyard performance — and estimates carbon sequestered and fertilizer retained.</p>
+    <div class="disclaim">⚠ PROTOTYPE — Listings are dummy data. Scores use evidence-grounded v1 calibration weights (not statistically fitted). Outputs are decision-support, not agronomic prescription. Pilot before scaling.</div>
+  </section>
+
+  <div class="grid">
+    <!-- ===== INPUT ===== -->
+    <div class="panel form">
+      <h2>Your vineyard <span class="n">1</span></h2>
+      <div class="body">
+        <div class="fld">
+          <label>Soil pH</label>
+          <select id="soilpH">
+            <option value="4.6">Strongly acidic (&lt; 5)</option>
+            <option value="5.5" selected>Acidic (5–6)</option>
+            <option value="6.5">Slightly acidic (6–7)</option>
+            <option value="7.5">Neutral–alkaline (7–8)</option>
+            <option value="8.4">Calcareous / alkaline (&gt; 8)</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Soil texture</label>
+          <select id="texture">
+            <option value="sandy" selected>Sandy / coarse / low-CEC</option>
+            <option value="loam">Loam / medium</option>
+            <option value="clay">Clay / fine / high-CEC</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Water regime <span class="opt">— the master variable</span></label>
+          <div class="seg" id="water">
+            <button data-v="rainfed" class="on">Rain-fed</button>
+            <button data-v="deficit">Deficit irr.</button>
+            <button data-v="full">Full irr.</button>
+          </div>
+          <div class="hint">Biochar's yield benefit appears mainly under water stress; full irrigation suppresses it.</div>
+        </div>
+        <div class="fld">
+          <label>Climate</label>
+          <select id="climate">
+            <option value="warm" selected>Warm / Mediterranean (MAT &gt; 18°C)</option>
+            <option value="temperate">Temperate (10–18°C)</option>
+            <option value="cool">Cool (&lt; 10°C)</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Farming type</label>
+          <div class="seg" id="organic">
+            <button data-v="conv" class="on">Conventional</button>
+            <button data-v="org">Organic / biodynamic</button>
+          </div>
+          <div class="hint">Organic requires biochar to clear the stricter EBC-AgroOrganic class.</div>
+        </div>
+        <div class="fld">
+          <label>Planned application rate (t/ha)</label>
+          <input type="number" id="rate" value="20" min="1" max="120" step="1">
+          <div class="hint">Vineyard yield benefit saturates ~16–22 t/ha; very high rates can harm.</div>
+        </div>
+        <div class="fld">
+          <label>Co-applied with compost / N source?</label>
+          <div class="seg" id="combo">
+            <button data-v="yes" class="on">Yes</button>
+            <button data-v="no">No</button>
+          </div>
+        </div>
+        <div class="fld">
+          <label>Vineyard area (ha) <span class="opt">— for carbon estimate</span></label>
+          <input type="number" id="area" value="5" min="0.1" max="9999" step="0.1">
+        </div>
+        <div class="fld">
+          <label>Fertilizer cost (USD / ha / yr) <span class="opt">— for savings estimate</span></label>
+          <input type="number" id="fertcost" value="400" min="0" max="100000" step="10">
+          <div class="hint">Your annual fertilizer spend per hectare. Used to value retained nutrient.</div>
+        </div>
+        <button class="run" onclick="runMatch()">Run match →</button>
+      </div>
+    </div>
+
+    <!-- ===== RESULTS ===== -->
+    <div class="panel results">
+      <h2>Matched biochars <span class="n">2</span></h2>
+      <div id="out">
+        <div class="empty">Set your vineyard parameters and press<br><b>Run match</b> to screen the catalogue.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span class="tag2">TERRAMATCH MVP</span> · Pipeline: producer entry → EBC gate (feedstock → thresholds) → vineyard-optimised score → carbon + fertilizer outputs<br>
+    Evidence base: ~45 vineyard studies + 2,438-row global dataset + EBC v10.5E (Sept 2025). Weights are v1 calibration, to be re-tuned on real outcome data. Carbon = gross stored CO₂ (not net LCA). Fertilizer = conservative modeled retention, "less lost" not "less needed".
+  </div>
+</footer>
+
+<script>
+/* ===================== DUMMY CATALOGUE ===================== */
+/* Properties a seller would declare. feedstockCat: plant | manure | sludge | digestate | municipal | fossil */
+const CATALOGUE = [
+  { id:'BC-01', name:'Vine-Cane Char 700', producer:'Domaine Carbon (FR)',
+    feedstock:'Grapevine cane', feedstockCat:'plant', pyroT:700, HCorg:0.32, OCorg:0.18,
+    Corg:78, pH:9.1, ash:8, Cu:42, Pb:12, Cd:0.3, PAH16:3.1,
+    declared:'cert', declaredClass:'AgroOrganic' },
+  { id:'BC-02', name:'Orchard Pruning 500', producer:'Romagna Biochar (IT)',
+    feedstock:'Orchard prunings', feedstockCat:'plant', pyroT:500, HCorg:0.45, OCorg:0.22,
+    Corg:72, pH:8.7, ash:11, Cu:55, Pb:18, Cd:0.5, PAH16:3.8,
+    declared:'cert', declaredClass:'Agro' },
+  { id:'BC-03', name:'DairyManure BioChar', producer:'AltoAgri (ES)',
+    feedstock:'Dairy manure', feedstockCat:'manure', pyroT:550, HCorg:0.38, OCorg:0.25,
+    Corg:48, pH:9.6, ash:32, Cu:60, Pb:22, Cd:0.6, PAH16:2.4,
+    declared:'cert', declaredClass:'Agro' },
+  { id:'BC-04', name:'Softwood Premium 650', producer:'Nordic Char (SE)',
+    feedstock:'Softwood chips', feedstockCat:'plant', pyroT:650, HCorg:0.30, OCorg:0.15,
+    Corg:85, pH:8.2, ash:5, Cu:18, Pb:8, Cd:0.2, PAH16:2.0,
+    declared:'self', declaredClass:'AgroOrganic' },
+  { id:'BC-05', name:'GreenWaste Char 420', producer:'CityLoop (DE)',
+    feedstock:'Municipal green waste', feedstockCat:'municipal', pyroT:420, HCorg:0.62, OCorg:0.34,
+    Corg:60, pH:8.9, ash:18, Cu:88, Pb:40, Cd:0.9, PAH16:5.6,
+    declared:'self', declaredClass:'Agro' },
+  { id:'BC-06', name:'LowTemp Vine 400', producer:'TestPlot (PT)',
+    feedstock:'Grapevine prunings', feedstockCat:'plant', pyroT:400, HCorg:0.78, OCorg:0.41,
+    Corg:65, pH:7.9, ash:9, Cu:30, Pb:10, Cd:0.3, PAH16:4.2,
+    declared:'self', declaredClass:'Agro' },
+  { id:'BC-07', name:'Sewage Sludge Char', producer:'AquaPyro (NL)',
+    feedstock:'Sewage sludge', feedstockCat:'sludge', pyroT:600, HCorg:0.40, OCorg:0.20,
+    Corg:40, pH:8.4, ash:45, Cu:140, Pb:95, Cd:2.1, PAH16:7.8,
+    declared:'self', declaredClass:'Agro' },
+];
+
+/* ===================== EBC LIMITS (v10.5E) ===================== */
+const EBC = {
+  Agro:        { HCorg:0.7, Cu:100, Pb:120, Cd:1.5, PAH16:6.0 },
+  AgroOrganic: { HCorg:0.4, Cu:70,  Pb:45,  Cd:0.7, PAH16:6.0, requirePyroT:500, plantOnly:true },
+};
+
+/* ===================== GATE ===================== */
+function gate(bc, targetClass){
+  const fails=[];
+  // Stage A — feedstock
+  if(bc.feedstockCat==='fossil') fails.push('fossil-carbon feedstock');
+  if(targetClass==='AgroOrganic' && bc.feedstockCat!=='plant')
+    fails.push('AgroOrganic requires pure plant biomass (feedstock: '+bc.feedstock+')');
+  // Stage B — thresholds
+  const L = EBC[targetClass];
+  if(bc.HCorg >= L.HCorg) fails.push('H/Corg '+bc.HCorg+' ≥ '+L.HCorg+' limit');
+  if(L.requirePyroT && bc.pyroT <= L.requirePyroT) fails.push('pyrolysis '+bc.pyroT+'°C ≤ '+L.requirePyroT+'°C req.');
+  if(bc.Cu > L.Cu) fails.push('Cu '+bc.Cu+' > '+L.Cu+' mg/kg');
+  if(bc.Pb > L.Pb) fails.push('Pb '+bc.Pb+' > '+L.Pb+' mg/kg');
+  if(bc.Cd > L.Cd) fails.push('Cd '+bc.Cd+' > '+L.Cd+' mg/kg');
+  if(bc.PAH16 > L.PAH16) fails.push('PAH16 '+bc.PAH16+' > '+L.PAH16+' mg/kg');
+  return { pass:fails.length===0, fails };
+}
+
+/* ===================== SCORING MODULES (−1..+1) ===================== */
+function modPH(pH){
+  if(pH<5) return .9; if(pH<6) return .85; if(pH<7) return .2; if(pH<8) return .2; return -.25; // calcareous penalty
+}
+function modWater(texture, pyroT){
+  // water-holding fit: coarse soils gain most; high pyroT biochar better; 400°C hydrophobic
+  let base = texture==='sandy'?.9 : texture==='loam'?.45 : .35;
+  let tFac = pyroT>=600?1 : pyroT>=500?.8 : pyroT>=450?.5 : -.2; // 400°C hydrophobic → negative
+  return Math.max(-1,Math.min(1, base*tFac));
+}
+function modCombo(combo){ return combo==='yes'?1:.4; }
+function modRate(rate){
+  if(rate<=10) return .85; if(rate<=20) return .80; if(rate<=30) return .65;
+  if(rate<=40) return .55; if(rate<=60) return .35; return -.3; // harm ceiling
+}
+function modClimate(c){ return c==='warm'?.8 : c==='temperate'?.5 : .3; }
+function waterGate(w){ return w==='rainfed'?1 : w==='deficit'?.6 : .25; }
+
+const WEIGHTS = { pH:.28, water:.25, combo:.22, rate:.15, climate:.10 };
+
+/* ===================== OUTPUTS ===================== */
+function carbonCO2(area, rate, Corg, HCorg){
+  const perm = HCorg<0.4?1.0 : HCorg<0.7?0.7 : 0.4;
+  const t = area*rate*(Corg/100)*perm*(44/12);
+  return t;
+}
+function npkCeiling(texture){
+  return texture==='sandy'?15 : texture==='loam'?10 : 3;   // soil sets the ceiling
+}
+function rateFactor(rate){
+  // climbs to full by ~15 t/ha, then plateaus flat (no decline — retention is physico-chemical)
+  return Math.min(1, rate/15);
+}
+function npkRetention(texture, rate){
+  return npkCeiling(texture) * rateFactor(rate);           // actual % = ceiling × saturating factor
+}
+
+/* ===================== ENGINE ===================== */
+function score(bc, ctx){
+  const m = {
+    pH:      modPH(ctx.pH),
+    water:   modWater(ctx.texture, bc.pyroT),
+    combo:   modCombo(ctx.combo),
+    rate:    modRate(ctx.rate),
+    climate: modClimate(ctx.climate),
+  };
+  let raw = m.pH*WEIGHTS.pH + m.water*WEIGHTS.water + m.combo*WEIGHTS.combo
+          + m.rate*WEIGHTS.rate + m.climate*WEIGHTS.climate;
+  const wg = waterGate(ctx.water);
+  raw *= wg;
+  const score100 = Math.round(Math.max(0,Math.min(1,(raw+1)/2))*100);
+  return { m, raw, wg, score100 };
+}
+
+function confidence(bc, ctx){
+  let c = bc.declared==='cert' ? .9 : .65;     // verified vs self-reported
+  const reasons=[];
+  if(bc.declared!=='cert') reasons.push('biochar properties self-reported, not EBC-verified');
+  if(ctx.water==='full'){ c*=.85; reasons.push('full irrigation — yield mechanism weakly evidenced here'); }
+  // input completeness: penalise reliance on defaults / missing soil detail
+  if(ctx.usedDefaults>0){ c*=Math.pow(.96,ctx.usedDefaults); reasons.push(ctx.usedDefaults+' input(s) left at default'); }
+  c=Math.max(.3,Math.min(.95,c));
+  const label = c>=.8?'high':c>=.6?'moderate':'low';
+  // band half-width on the 0-100 scale: lower confidence -> wider band
+  const halfBand = Math.round((1-c)*22);       // high≈±5, moderate≈±9, low≈±15
+  return { c, label, halfBand, reasons };
+}
+
+/* which single change would most improve this match? reuses module logic */
+function sensitivity(bc, ctx, baseScore){
+  const probes=[];
+  // try alternative water regimes (only suggest LESS irrigation, the realistic lever)
+  if(ctx.water==='full') probes.push(['water','deficit','switch to deficit irrigation']);
+  if(ctx.water==='deficit') probes.push(['water','rainfed','dry-farm (rain-fed)']);
+  // co-amendment
+  if(ctx.combo==='no') probes.push(['combo','yes','co-apply with compost / N source']);
+  // rate toward the sweet spot if currently low or over-applied
+  if(ctx.rate<10) probes.push(['rate',15,'raise rate toward ~15 t/ha']);
+  if(ctx.rate>40) probes.push(['rate',20,'reduce rate toward ~20 t/ha (past saturation)']);
+  let best=null;
+  probes.forEach(([key,val,label])=>{
+    const alt={...ctx,[key]:val};
+    const s=score(bc,alt).score100;
+    const delta=s-baseScore;
+    if(delta>0 && (!best||delta>best.delta)) best={label,delta,to:s};
+  });
+  // also report the single weakest mechanism (what's dragging the score)
+  const mk=Object.keys(score(bc,ctx).m);
+  const ms=score(bc,ctx).m;
+  let weakest=mk[0];
+  mk.forEach(k=>{ if(ms[k]<ms[weakest]) weakest=k; });
+  return { best, weakest, weakestVal:ms[weakest] };
+}
+
+/* ===================== RENDER ===================== */
+const $=s=>document.querySelector(s);
+function seg(id){ const b=document.querySelector('#'+id+' .on'); return b?b.dataset.v:null; }
+document.querySelectorAll('.seg').forEach(s=>s.addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  s.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  e.target.classList.add('on');
+}));
+
+function bar(v){
+  const pct=Math.abs(v)*50;
+  const fill = v>=0
+    ? `<div class="fillp" style="width:${pct}%"></div>`
+    : `<div class="filln" style="width:${pct}%"></div>`;
+  return `<div class="track"><div class="mid"></div>${fill}</div>`;
+}
+const mechLabel={pH:'Soil-pH fit',water:'Water-holding',combo:'Co-amendment',rate:'Rate',climate:'Climate'};
+
+function runMatch(){
+  const ctx = {
+    pH:parseFloat($('#soilpH').value),
+    texture:$('#texture').value,
+    water:seg('water'),
+    climate:$('#climate').value,
+    organic:seg('organic'),
+    rate:parseFloat($('#rate').value)||20,
+    combo:seg('combo'),
+    area:parseFloat($('#area').value)||1,
+    fertcost:parseFloat($('#fertcost').value)||0,
+  };
+  // count inputs left at their default value (drives the confidence completeness penalty)
+  ctx.usedDefaults = [
+    $('#rate').value==='20', $('#area').value==='5', $('#fertcost').value==='400'
+  ].filter(Boolean).length;
+  const targetClass = ctx.organic==='org' ? 'AgroOrganic' : 'Agro';
+
+  const rows = CATALOGUE.map(bc=>{
+    const g = gate(bc, targetClass);
+    if(!g.pass) return { bc, blocked:true, fails:g.fails };
+    const s = score(bc, ctx);
+    const conf = confidence(bc, ctx);
+    const sens = sensitivity(bc, ctx, s.score100);
+    const co2 = carbonCO2(ctx.area, ctx.rate, bc.Corg, bc.HCorg);
+    const npk = npkRetention(ctx.texture, ctx.rate);
+    const usdSaved = ctx.fertcost * ctx.area * (npk/100);
+    const overApplied = ctx.rate > 40;
+    return { bc, blocked:false, s, conf, sens, co2, npk, usdSaved, overApplied };
+  });
+
+  // rank: passing first by score desc, blocked last
+  rows.sort((a,b)=>{
+    if(a.blocked!==b.blocked) return a.blocked?1:-1;
+    if(a.blocked) return 0;
+    return b.s.score100 - a.s.score100;
+  });
+
+  const passed = rows.filter(r=>!r.blocked).length;
+  let html = `<div class="summary">
+    <span>Catalogue: <b>${CATALOGUE.length}</b></span>
+    <span>Target class: <b>EBC-${targetClass}</b></span>
+    <span>Passed gate: <b>${passed}</b></span>
+    <span>Blocked: <b>${CATALOGUE.length-passed}</b></span>
+  </div>`;
+
+  rows.forEach((r,i)=>{
+    const bc=r.bc;
+    const badges = [
+      bc.declared==='cert'?`<span class="badge b-cert">✓ EBC-certified (declared)</span>`
+                          :`<span class="badge b-self">self-assessed</span>`,
+    ];
+    if(!r.blocked && targetClass==='AgroOrganic') badges.push(`<span class="badge b-org">organic-eligible</span>`);
+
+    if(r.blocked){
+      html += `<div class="card blocked" style="animation-delay:${i*0.05}s">
+        <div class="crow">
+          <div>
+            <div class="cname">${bc.name} <span class="badge b-block">✕ blocked</span></div>
+            <div class="cmeta">${bc.producer} · ${bc.feedstock} · ${bc.pyroT}°C · H/Corg ${bc.HCorg}</div>
+            <div>${badges.join('')}</div>
+          </div>
+        </div>
+        <div class="blockmsg">Fails EBC-${targetClass}: ${r.fails.join(' · ')}</div>
+      </div>`;
+      return;
+    }
+
+    const s=r.s;
+    const lo=Math.max(0,s.score100-r.conf.halfBand), hi=Math.min(100,s.score100+r.conf.halfBand);
+    const col = s.score100>=70?'var(--good)':s.score100>=45?'var(--mid)':'var(--bad)';
+    const verdict = s.score100>=70?'Strong match':s.score100>=45?'Moderate match':'Weak match';
+    const confcol = r.conf.label==='high'?'var(--good)':r.conf.label==='moderate'?'var(--mid)':'var(--bad)';
+
+    const mechs = Object.keys(s.m).map(k=>`
+      <div class="mech">
+        <div class="ml"><span>${mechLabel[k]}</span><span>${s.m[k]>=0?'+':''}${s.m[k].toFixed(2)}</span></div>
+        ${bar(s.m[k])}
+      </div>`).join('');
+
+    // explanatory why
+    const drivers=[];
+    if(s.m.pH>=.8) drivers.push('acidic soil strongly favours the liming effect');
+    if(s.m.pH<0) drivers.push('alkaline soil — biochar pH works against you (penalised)');
+    if(s.m.water>=.7) drivers.push('coarse soil + high-pyrolysis char = strong water-holding gain');
+    if(s.m.water<0) drivers.push('low-temperature char is hydrophobic here (penalised)');
+    if(s.wg<.5) drivers.push(`full irrigation suppresses the yield benefit (×${s.wg})`);
+    if(s.m.combo===1) drivers.push('co-applied with a nutrient source');
+    if(s.m.rate<0) drivers.push('application rate above the harm ceiling');
+
+    html += `<div class="card" style="animation-delay:${i*0.06}s">
+      <div class="crow">
+        <div>
+          <div class="cname">${bc.name}</div>
+          <div class="cmeta">${bc.producer} · ${bc.feedstock} · ${bc.pyroT}°C · H/Corg ${bc.HCorg} · Corg ${bc.Corg}%</div>
+          <div>${badges.join('')}</div>
+        </div>
+        <div class="score">
+          <div class="dial" style="color:${col}">${s.score100}</div>
+          <div class="range">range ${lo}–${hi}</div>
+          <small>${verdict}</small>
+          <div class="conf" style="color:${confcol}">● ${r.conf.label} confidence</div>
+        </div>
+      </div>
+      <div class="mechs">${mechs}</div>
+      <div class="outs">
+        <div class="out">
+          <div class="ot">Carbon sequestered (gross)</div>
+          <div class="ov">${r.co2.toFixed(1)} t CO₂</div>
+          <div class="os">over ${$('#area').value} ha · permanence from H/Corg · not net LCA</div>
+        </div>
+        <div class="out">
+          <div class="ot">Fertilizer retained (NPK)</div>
+          <div class="ov">~${r.npk.toFixed(1)}% · $${Math.round(r.usdSaved).toLocaleString()}/yr</div>
+          <div class="os">est. value of nutrient retained · "less lost" not "less needed" · modeled${r.overApplied?' · ⚠ rate &gt;40 t/ha: retention saturated, exceeds agronomic benefit':''}</div>
+        </div>
+      </div>
+      ${drivers.length?`<div class="why"><b>Why this score</b><br>${drivers.join('; ')}.</div>`:''}
+      ${r.sens.best?`<div class="lever"><b>Biggest lever</b> → ${r.sens.best.label} would raise the match to ~${r.sens.best.to} (+${r.sens.best.delta}).</div>`:''}
+      ${r.conf.reasons.length?`<div class="confnote"><b>Confidence drivers</b> · ${r.conf.reasons.join(' · ')}</div>`:''}
+    </div>`;
+  });
+
+  $('#out').innerHTML = html;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CharAtlas — Cocoa &amp; Coffee Carbon Impact Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F6F4;
+  --card:#FFFFFF;
+  --line:#E3E6E2;
+  --line2:#D6DAD5;
+  --ink:#1B2A26;
+  --ink2:#4A5A55;
+  --mut:#7C8A85;
+  --deep:#0E3B33;
+  --teal:#0F766E;
+  --mint:#EFF6F1;
+  --mint2:#E3EFE7;
+  --mintline:#CFE2D6;
+  --amber:#B45309;
+  --red:#B91C1C;
+  --redbg:#FDECEA;
+  --blue:#2E7FA8;
+  --olive:#6E8A2F;
+  --violet:#7A6BC4;
+  --orange:#C2681F;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:400 14px/1.5 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+input{font-family:inherit}
+
+/* ============ header ============ */
+.hdr{background:var(--deep);color:#fff;padding:22px 0 24px}
+.wrap{max-width:1210px;margin:0 auto;padding:0 20px}
+.hdr h1{margin:0 0 5px;font-size:22px;font-weight:700;letter-spacing:-.01em}
+.hdr h1 em{font-style:normal;color:#7FC7A9}
+.hdr p{margin:0 0 16px;font-size:13px;color:#A9C4BB;max-width:70ch}
+.hdr .lbl{font-size:10px;letter-spacing:.12em;color:#7E9C93;margin-bottom:7px}
+.crop{display:inline-flex;gap:4px;background:#0A2C26;padding:4px;border-radius:7px}
+.crop button{border:0;background:none;color:#8FA8A1;font:600 13px Inter;cursor:pointer;
+  padding:7px 17px;border-radius:5px}
+.crop button[aria-pressed=true]{background:#fff;color:var(--deep)}
+.crop button:focus-visible{outline:2px solid #7FC7A9;outline-offset:2px}
+.ver{margin-top:9px;font-size:10.5px;color:#5F7B73;font-style:italic}
+
+/* ============ layout ============ */
+.main{max-width:1210px;margin:0 auto;padding:20px 20px 60px;
+  display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media(max-width:1000px){.main{grid-template-columns:1fr}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:20px;margin-bottom:18px}
+.chead{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.chead h2{margin:0;font-size:15.5px;font-weight:600;letter-spacing:-.01em}
+.chead .desc{margin:4px 0 0;font-size:12px;color:var(--mut);font-weight:400}
+
+/* pills */
+.pill{display:inline-flex;gap:3px;background:#F0F2EF;border:1px solid var(--line);border-radius:7px;padding:3px}
+.pill button{border:0;background:none;cursor:pointer;color:var(--mut);font:500 12px Inter;padding:5px 12px;border-radius:5px}
+.pill button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.09)}
+.pill button:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+
+/* fields */
+.f label,.flabel{display:block;font:500 10px Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.ib{position:relative}
+.ib input{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:6px;background:#fff;
+  color:var(--ink);font:500 14px Inter}
+.ib .u{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--mut);font-size:11.5px;pointer-events:none}
+.ib.hasu input{padding-right:58px}
+.ib input:focus{outline:2px solid var(--teal);outline-offset:-1px;border-color:transparent}
+.ib input:disabled{background:#F5F6F4;color:#AFB6B2}
+.src{margin:6px 0 0;font-size:10.5px;color:#9AA5A1;font-style:italic}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.r4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:700px){.r2,.r3,.r4{grid-template-columns:1fr}}
+
+/* ============ streams ============ */
+.st{margin-bottom:26px}
+.st:last-of-type{margin-bottom:6px}
+.sthd{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.stname{font-size:14.5px;font-weight:600}
+.stfac{font-size:11px;color:var(--mut)}
+.stfac b{color:var(--teal);font-weight:600}
+.genrow{display:flex;gap:8px}
+.genrow .ib{flex:1;min-width:0}
+.dmwrap{display:flex;align-items:center;gap:6px}
+.dmwrap input{width:62px;padding:9px 8px;border:1px solid var(--line2);border-radius:6px;font:500 14px Inter;text-align:center}
+.dmwrap input:focus{outline:2px solid var(--teal);outline-offset:-1px}
+.dmwrap span{font-size:11px;color:var(--mut);white-space:nowrap}
+
+.sl{display:flex;align-items:center;gap:9px;margin-top:6px}
+.sl span{font:500 10px Inter;color:var(--mut)}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--line2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--teal);cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--line2)}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:var(--teal);cursor:pointer;border:2px solid #fff}
+input[type=range]:focus-visible{outline:2px solid var(--teal);outline-offset:4px}
+
+.fate{margin-top:18px;border:1px solid var(--line);border-radius:7px;padding:14px}
+.fatehd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.fatehd h4{margin:0;font-size:12px;font-weight:600;color:var(--teal)}
+.sum{font:500 10.5px Inter;padding:3px 9px;border-radius:20px;background:var(--mint2);color:#276749}
+.sum.bad{background:var(--redbg);color:var(--red)}
+.fate label{font-size:9.5px}
+
+/* ============ planner ============ */
+.ckrow{display:flex;gap:15px;flex-wrap:wrap}
+.ckrow label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);cursor:pointer;font-weight:500}
+.ckrow input{width:14px;height:14px;accent-color:var(--teal);cursor:pointer}
+table.pl{width:100%;border-collapse:collapse}
+table.pl th{font:500 10px Inter;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
+  text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-weight:500}
+table.pl th:first-child{width:70px}
+table.pl td{padding:5px 4px}
+table.pl td:first-child{font-size:12px;color:var(--mut);padding-left:8px}
+table.pl tr:last-child td:first-child{color:var(--teal);font-weight:600}
+table.pl input{width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:6px;font:500 13px Inter}
+table.pl input:focus{outline:2px solid var(--teal);outline-offset:-1px}
+table.pl input:disabled{background:#F5F6F4;color:#AFB6B2}
+.fertblk{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.fertblk .sub{font-size:11px;color:var(--mut);margin:0 0 14px}
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:820px){.fgrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.fgrid{grid-template-columns:1fr}}
+.fitem{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:7px 8px 7px 11px}
+.fitem span{flex:1;font-size:11px;color:var(--teal);font-weight:500;line-height:1.25}
+.fitem input{width:58px;padding:6px;border:1px solid var(--line2);border-radius:5px;text-align:center;font:500 13px Inter}
+.fitem input:focus{outline:2px solid var(--teal);outline-offset:-1px}
+
+/* ============ charts ============ */
+.ctitle{text-align:center;font:500 9.5px Inter;letter-spacing:.11em;text-transform:uppercase;color:var(--mut);margin:6px 0 18px}
+.bars{display:grid;grid-template-columns:96px 1fr;gap:9px 12px;align-items:center}
+.bars .bl{font-size:10.5px;color:var(--mut);text-align:right}
+.bars .bt{height:34px;position:relative;background:#FAFBFA}
+.bars .zero{position:absolute;top:-4px;bottom:-4px;width:1px;background:var(--line2);z-index:2}
+.bars .bf{position:absolute;top:0;bottom:0;border-radius:2px;transition:left .4s ease,width .4s ease;min-width:2px}
+.bfill-base{background:#2F3E3A}
+.bfill-pcf{background:#17A67C}
+.bfill-net{background:#0E6E5A}
+.bars .bv{position:absolute;top:50%;transform:translateY(-50%);
+  font:600 11px Inter;color:var(--ink2);white-space:nowrap}
+.zlabel{grid-column:2;font-size:9px;color:var(--mut);position:relative;height:12px}
+.zlabel span{position:absolute;transform:translateX(-50%)}
+
+.mit{margin-top:26px}
+.mitgrp{font:500 9.5px Inter;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin:16px 0 8px}
+.mitrow{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:12.5px}
+.mitrow i{width:8px;height:8px;border-radius:50%;flex:none}
+.mitrow .nm{flex:1;color:var(--ink2)}
+.mitrow .vl{font-weight:600;font-size:12.5px}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-bottom:14px}
+.legend div{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--mut)}
+.legend i{width:10px;height:10px;border-radius:2px}
+.legend i.ln{width:14px;height:0;border-top:1.5px solid var(--ink);border-radius:0}
+.projnote{text-align:center;font-size:10.5px;color:var(--mut);margin-top:12px;font-style:italic}
+
+/* ============ summary ============ */
+.side{position:sticky;top:16px}
+@media(max-width:1000px){.side{position:static}}
+.side .card{padding:18px}
+.side h2{margin:0 0 3px;font-size:15.5px;font-weight:600}
+.yr{font-size:11.5px;color:var(--mut);margin:0 0 16px}
+.yr b{color:var(--teal);font-weight:600}
+.avlbl{font:500 10px Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:7px}
+.vtog{display:flex;background:#F0F2EF;border:1px solid var(--line);border-radius:7px;padding:3px;gap:3px}
+.vtog button{flex:1;border:0;background:none;cursor:pointer;color:var(--mut);font:500 12px Inter;padding:7px;border-radius:5px}
+.vtog button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.vtog button:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+.vnote{font-size:10.5px;color:var(--mut);margin:9px 0 14px;line-height:1.45}
+.vnote.warn{color:var(--amber)}
+
+.hero{background:var(--deep);color:#fff;border-radius:8px;padding:15px 16px;margin-bottom:14px}
+.hero .k{font:500 9.5px Inter;letter-spacing:.1em;text-transform:uppercase;color:#7FA396;margin-bottom:8px}
+.hero .v{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.hero .v small{font-size:12px;font-weight:400;color:#9FBBB2;margin-left:6px;letter-spacing:0}
+.hero .d{margin-top:8px;font-size:11px;color:#7FC7A9}
+.hero .d.up{color:#E5A87C}
+
+.rem{background:var(--mint);border:1px solid var(--mintline);border-radius:8px;padding:13px 14px;margin-bottom:12px}
+.rem .k{font:500 9.5px Inter;letter-spacing:.08em;text-transform:uppercase;color:#4A6B5E;margin-bottom:7px;line-height:1.5}
+.rem .v{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.rem .v small{font-size:11px;font-weight:400;color:var(--mut);margin-left:3px}
+.rem .n{margin-top:7px;font-size:10.5px;color:var(--mut);line-height:1.45}
+
+.blk{background:var(--mint);border:1px solid var(--mintline);border-radius:8px;padding:13px 14px;margin-bottom:10px}
+.blk.plain{background:#F7F8F6;border-color:var(--line)}
+.blk .k{font:500 9.5px Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.blk .v{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.blk .v small{font-size:11px;font-weight:400;color:var(--mut);margin-left:3px}
+.blk .n{font-size:10.5px;color:var(--mut);margin-top:3px}
+.blk details{margin-top:9px;border-top:1px solid var(--mintline);padding-top:8px}
+.blk.plain details{border-top-color:var(--line)}
+.blk summary{cursor:pointer;font-size:11px;color:var(--teal);list-style:none;display:flex;align-items:center;gap:4px}
+.blk summary::-webkit-details-marker{display:none}
+.blk summary:hover{text-decoration:underline}
+.blk summary::after{content:'⌄';font-size:11px}
+.blk details[open] summary::after{content:'⌃'}
+.blk .m{margin-top:9px;font:400 10.5px/1.7 ui-monospace,"SF Mono",Menlo,monospace;color:var(--ink2);
+  white-space:pre;overflow-x:auto;background:rgba(255,255,255,.6);border-radius:5px;padding:9px 10px}
+
+.gain{background:#FBF6EC;border:1px solid #EBDCC0;border-radius:8px;padding:12px 14px;margin-top:12px}
+.gain .k{font:500 9.5px Inter;letter-spacing:.09em;text-transform:uppercase;color:var(--amber);margin-bottom:5px}
+.gain .v{font-size:17px;font-weight:700}
+.gain .n{font-size:10.5px;color:var(--mut);margin-top:5px;line-height:1.45;font-style:italic}
+
+.note{max-width:1210px;margin:0 auto;padding:0 20px 50px;font-size:11.5px;color:var(--mut);line-height:1.65}
+.note b{color:var(--ink2)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="wrap">
+    <h1>Char<em>Atlas</em> — Cocoa &amp; Coffee Carbon Impact Calculator</h1>
+    <p>Estimate carbon footprint reductions and, reported separately, the carbon removed and stored by turning crop residue into biochar.</p>
+    <div class="lbl">CROP</div>
+    <div class="crop" role="group" aria-label="Choose crop">
+      <button id="bCocoa" aria-pressed="true">Cocoa</button>
+      <button id="bCoffee" aria-pressed="false">Coffee</button>
+    </div>
+    <div class="ver">CharAtlas v1.0</div>
+  </div>
+</div>
+
+<div class="main">
+<div>
+
+  <div class="card">
+    <div class="chead">
+      <h2>Farm &amp; Production</h2>
+      <div class="pill" role="group" aria-label="Field moisture">
+        <button id="bDamp" aria-pressed="true">Damp</button>
+        <button id="bDry" aria-pressed="false">Dry</button>
+      </div>
+    </div>
+    <div class="r2" style="margin-bottom:16px">
+      <div class="f">
+        <label for="crop">Yearly harvest</label>
+        <div class="ib hasu"><input type="number" id="crop" value="100" min="0" step="any"><span class="u">tonnes</span></div>
+      </div>
+      <div class="f">
+        <label for="area">Farm area</label>
+        <div class="ib hasu"><input type="number" id="area" value="50" min="0" step="any"><span class="u">hectares</span></div>
+      </div>
+    </div>
+    <div class="f">
+      <label for="pcf0">Starting carbon footprint</label>
+      <div class="ib hasu"><input type="number" id="pcf0" value="1.22" min="0" step="any"><span class="u">kg CO₂e/kg</span></div>
+      <p class="src" id="src">Abou Rajab et al. (2016)</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead">
+      <h2>Biochar &amp; Residue</h2>
+      <div class="pill" role="group" aria-label="Kiln type">
+        <button id="bSimple" aria-pressed="true">Simple kiln</button>
+        <button id="bInd" aria-pressed="false">Industrial kiln</button>
+      </div>
+    </div>
+    <div id="streams"></div>
+  </div>
+
+  <div class="card">
+    <div class="chead">
+      <div>
+        <h2>5-Year Scenario Planner</h2>
+        <p class="desc">Set annual targets relative to today. The charts below follow this trajectory.</p>
+      </div>
+      <div class="ckrow">
+        <label><input type="checkbox" id="ckY"> Harvest growth</label>
+        <label><input type="checkbox" id="ckF"> Fertilizer cut</label>
+        <label><input type="checkbox" id="ckS"> Soil carbon</label>
+        <label><input type="checkbox" id="ckR" checked> Scale residues</label>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="pl">
+        <thead><tr><th>Year</th><th>Harvest growth (%)</th><th>Fertilizer cut (%)</th><th>Soil carbon (t/ha)</th></tr></thead>
+        <tbody id="plBody"></tbody>
+      </table>
+    </div>
+    <div class="fertblk" id="fertBlk" style="display:none">
+      <div class="flabel">Fertilizer you use today</div>
+      <p class="sub">Per hectare, per year. Your cut is applied to these rates.</p>
+      <div class="fgrid" id="fgrid"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead">
+      <h2 id="iaTitle">Impact Analysis (Year 5)</h2>
+      <div class="pill" id="yrPill" role="group" aria-label="Choose year"></div>
+    </div>
+    <div class="ctitle">Intensity comparison (kg CO₂e/kg)</div>
+    <div class="bars" style="padding-right:16px">
+      <div class="bl">Baseline</div><div class="bt"><div class="zero" id="z0"></div><div class="bf bfill-base" id="bBase"></div><span class="bv" id="vBase"></span></div>
+      <div class="bl">Footprint</div><div class="bt"><div class="zero" id="z1"></div><div class="bf bfill-pcf" id="bPcf"></div><span class="bv" id="vPcf"></span></div>
+      <div class="bl">Net inventory</div><div class="bt"><div class="zero" id="z2"></div><div class="bf bfill-net" id="bNet"></div><span class="bv" id="vNet"></span></div>
+      <div class="zlabel"><span id="zTick">0</span></div>
+    </div>
+
+    <div class="mit">
+      <div class="ctitle" style="margin-bottom:6px">Contribution to mitigation (t CO₂e)</div>
+      <div class="mitgrp">Footprint reductions (inside boundary)</div>
+      <div class="mitrow"><i style="background:#17A67C"></i><span class="nm">Emissions avoided</span><span class="vl" id="mAv">0.00 t</span></div>
+      <div class="mitrow"><i style="background:#C2681F"></i><span class="nm">Fertilizer saved</span><span class="vl" id="mFe">0.00 t</span></div>
+      <div id="mGainRow" style="display:none">
+        <div class="mitgrp">Shown, not counted</div>
+        <div class="mitrow"><i style="background:#7A6BC4"></i><span class="nm">Efficiency gain</span><span class="vl" id="mGa">0.00 t</span></div>
+      </div>
+      <div class="mitgrp">Carbon removed &amp; stored (reported separately)</div>
+      <div class="mitrow"><i style="background:#0E6E5A"></i><span class="nm">Biochar stored</span><span class="vl" id="mCh">0.00 t</span></div>
+      <div class="mitrow" id="mSoRow"><i style="background:#6E8A2F"></i><span class="nm">Soil carbon</span><span class="vl" id="mSo">0.00 t</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chead"><h2>5-Year Impact Projection</h2></div>
+    <div class="legend">
+      <div><i style="background:#0E6E5A"></i>Biochar stored</div>
+      <div><i style="background:#6E8A2F"></i>Soil carbon</div>
+      <div><i style="background:#2E7FA8"></i>Emissions avoided</div>
+      <div><i style="background:#C2681F"></i>Fertilizer saved</div>
+      <div><i style="background:#7A6BC4"></i>Efficiency gain</div>
+      <div><i class="ln"></i>Cumulative stored carbon</div>
+    </div>
+    <div id="proj"></div>
+    <p class="projnote">The line tracks total biochar and soil carbon accumulated over time.</p>
+  </div>
+</div>
+
+<aside class="side">
+  <div class="card">
+    <h2>Impact Summary</h2>
+    <p class="yr">Year 5 · <b id="effT">100.0</b> tonnes</p>
+
+    <div class="avlbl">Accounting view</div>
+    <div class="vtog" role="group" aria-label="Accounting view">
+      <button id="bFoot" aria-pressed="true">Footprint view</button>
+      <button id="bNetV" aria-pressed="false">Net view</button>
+    </div>
+    <p class="vnote" id="vnote">Reductions only. Suitable for a product carbon claim.</p>
+
+    <div class="hero">
+      <div class="k" id="hK">Carbon footprint</div>
+      <div class="v"><span id="hV">0.76</span><small>kg CO₂e/kg</small></div>
+      <div class="d" id="hD">37.8% below 1.22 starting footprint</div>
+    </div>
+
+    <div class="rem">
+      <div class="k">Carbon removed &amp; stored — reported separately</div>
+      <div class="v"><span id="rV">117.52</span><small>t CO₂e</small></div>
+      <div class="n">Biochar and soil carbon. Reported on their own, and never subtracted from the footprint above.</div>
+    </div>
+
+    <div class="blk">
+      <div class="k">Biochar stored</div>
+      <div class="v"><span id="sCh">117.52</span><small>t</small></div>
+      <div class="n">Locked into stable char</div>
+      <details><summary>Show math</summary><div class="m" id="mmCh"></div></details>
+    </div>
+
+    <div class="blk">
+      <div class="k">Emissions avoided</div>
+      <div class="v"><span id="sAv">46.10</span><small>t</small></div>
+      <div class="n">Residue methane &amp; nitrous oxide</div>
+      <details><summary>Show math</summary><div class="m" id="mmAv"></div></details>
+    </div>
+
+    <div class="blk plain">
+      <div class="k">Fertilizer saved</div>
+      <div class="v"><span id="sFe">0.00</span><small>t</small></div>
+      <div class="n">Less fertilizer used</div>
+      <details><summary>Show math</summary><div class="m" id="mmFe"></div></details>
+    </div>
+
+    <div class="blk plain">
+      <div class="k">Soil carbon</div>
+      <div class="v"><span id="sSo">0.00</span><small>t</small></div>
+      <div class="n">Soil improvement</div>
+      <details><summary>Show math</summary><div class="m" id="mmSo"></div></details>
+    </div>
+
+    <div class="gain" id="gainBox" style="display:none">
+      <div class="k">Efficiency gain</div>
+      <div class="v"><span id="sGa">0.00</span> <small style="font-size:11px;font-weight:400;color:var(--mut)">t CO₂e</small></div>
+      <div class="n">Passive reduction from higher yield dilution — not counted in the totals above.</div>
+    </div>
+  </div>
+</aside>
+</div>
+
+<div class="note">
+  <p><b>Footprint view</b> counts only avoided emissions and fertilizer savings. It is the number you can put on a product.
+  <b>Net view</b> also subtracts stored carbon; it is useful for tracking progress to net zero, but it is <b>not</b> a product carbon footprint.</p>
+  <p><b>CO₂e</b> means carbon dioxide equivalent — every greenhouse gas expressed as the amount of carbon dioxide that would warm the planet by the same amount.</p>
+  <p>The four “what happens today” shares should add to 100%. If they don't, the calculator still adds them straight through, so a row totalling 200% will double-count. Avoided emissions are counted on the whole residue pile whatever share you send to the kiln, because the comparison is against a world where you built no kiln at all.</p>
+</div>
+
+<script>
+/* ================= MODEL (verified 25/25 against Valorize v1.9) ================= */
+const CHAR_YIELD=0.22, C_TO_CO2=44/12;
+const SPREAD_WET=3.7, SPREAD_DRY=2.14;
+const COMPOST=0.155, BURNT=0.095, PILES_MOIST=0.674, PILES_WOODY=0.196;
+const KILN={simple:{P:.75,E:.80}, industrial:{P:.85,E:.85}};
+
+const FERTS=[
+  {k:'urea',n:'Urea',ef:1.735,d:100},
+  {k:'an',  n:'Ammonium nitrate',ef:2.550,d:0},
+  {k:'as',  n:'Ammonium sulfate',ef:1.150,d:0},
+  {k:'tsp', n:'Triple superphosphate',ef:0.775,d:50},
+  {k:'kcl', n:'Potassium chloride',ef:0.500,d:60},
+  {k:'npk', n:'NPK blend (15-15-15)',ef:0.480,d:300},
+  {k:'comp',n:'Compost',ef:0.005,d:0},
+];
+
+const CROPS={
+  cocoa:{base:1.22,src:'Abou Rajab et al. (2016)',streams:[
+    {key:'cph',  name:'Cocoa pod husks', basis:'crop',gen:3.04,dm:15.4,oc:65,n:1.27, piles:PILES_MOIST,fate:[0,100,0,0],share:100},
+    {key:'prune',name:'Pruning wood',    basis:'area',gen:8900,dm:57,  oc:80,n:0.580,piles:PILES_WOODY,fate:[100,0,0,0],share:100},
+    {key:'shell',name:'Cocoa shells',    basis:'crop',gen:0.15,dm:90,  oc:70,n:2.50, piles:PILES_MOIST,fate:[0,100,0,0],share:100},
+  ]},
+  coffee:{base:3.60,src:'IDH–CIRAD (2023)',streams:[
+    {key:'pulp', name:'Coffee pulp',     basis:'crop',gen:2.50,dm:23,  oc:60,n:2.80, piles:PILES_MOIST,fate:[0,100,0,0],share:100},
+    {key:'prune',name:'Pruning wood',    basis:'area',gen:5000,dm:60,  oc:80,n:0.600,piles:PILES_WOODY,fate:[100,0,0,0],share:100},
+    {key:'parch',name:'Coffee parchment',basis:'crop',gen:0.18,dm:88,  oc:65,n:0.600,piles:PILES_MOIST,fate:[0,100,0,0],share:100},
+  ]},
+};
+const FATES=['Spread on field','Left in piles','Composted','Burned'];
+
+let S={crop:'cocoa',damp:true,kiln:'simple',view:'foot',year:5,
+  cropVol:100,area:50,base:1.22,streams:null,
+  plan:{y:[0,0,0,0,0],f:[0,0,0,0,0],s:[0,0,0,0,0]},
+  ck:{y:false,f:false,s:false,r:true},
+  fert:Object.fromEntries(FERTS.map(f=>[f.k,f.d]))};
+
+function loadCrop(c){
+  S.crop=c; S.base=CROPS[c].base;
+  S.streams=JSON.parse(JSON.stringify(CROPS[c].streams));
+  document.getElementById('pcf0').value=S.base;
+  document.getElementById('src').textContent=CROPS[c].src;
+}
+
+function compute(yi){
+  const yPct = S.ck.y ? (+S.plan.y[yi]||0) : 0;
+  const cropEff = S.cropVol*(1+yPct/100);
+  const mBase = S.ck.r ? cropEff : S.cropVol;
+  const K=KILN[S.kiln], PE=K.P*K.E;
+  const spread = S.damp?SPREAD_WET:SPREAD_DRY;
+
+  const rows=S.streams.map(st=>{
+    const dm = st.basis==='crop' ? mBase*st.gen*(st.dm/100)
+                                 : S.area*(st.gen/1000)*(st.dm/100);
+    const factor=(st.oc/100)*C_TO_CO2*PE;
+    const biochar=dm*CHAR_YIELD*(st.share/100)*factor;
+    const f=st.fate.map(v=>v/100);
+    const avoided=dm*( f[0]*(st.n/100)*spread + f[1]*st.piles + f[2]*COMPOST + f[3]*BURNT );
+    return {st,dm,factor,biochar,avoided};
+  });
+
+  const biochar=rows.reduce((a,r)=>a+r.biochar,0);
+  const avoided=rows.reduce((a,r)=>a+r.avoided,0);
+  const fertSum=FERTS.reduce((a,f)=>a+(+S.fert[f.k]||0)*f.ef,0);
+  const redux = S.ck.f ? (+S.plan.f[yi]||0) : 0;
+  const inputs = S.area*fertSum*redux/100/1000;
+  const socRate = S.ck.s ? (+S.plan.s[yi]||0) : 0;
+  const soc = S.area*socRate;
+
+  const pcf = cropEff>0 ? (S.base*S.cropVol - avoided - inputs)/cropEff : 0;
+  const net = cropEff>0 ? pcf - (biochar+soc)/cropEff : 0;
+  const gain = S.base*cropEff - S.base*S.cropVol;
+
+  return {rows,biochar,avoided,inputs,soc,pcf,net,gain,cropEff,PE,spread,fertSum,redux,socRate};
+}
+const f2=n=>(Math.abs(n)<0.005?0:n).toFixed(2);
+const f1=n=>n.toFixed(1);
+
+/* ================= STREAMS ================= */
+function renderStreams(){
+  const h=document.getElementById('streams'); h.innerHTML='';
+  const K=KILN[S.kiln], PE=K.P*K.E;
+  S.streams.forEach((st,i)=>{
+    const sum=st.fate.reduce((a,b)=>a+b,0);
+    const fac=((st.oc/100)*C_TO_CO2*PE).toFixed(2);
+    const d=document.createElement('div'); d.className='st';
+    d.innerHTML=
+      '<div class="sthd">'
+      +'<div class="stname">'+st.name+'</div>'
+      +'<div class="stfac">Stores <b>'+fac+'</b> t CO\u2082e per tonne of residue</div>'
+      +'</div>'
+      +'<div class="r3">'
+        +'<div class="f">'
+          +'<label>'+(st.basis==='crop'?'Residue per kg of harvest':'Residue per hectare')+'</label>'
+          +'<div class="genrow">'
+            +'<div class="ib hasu"><input type="number" data-s="'+i+'" data-f="gen" value="'+st.gen+'" step="any" min="0"><span class="u">'+(st.basis==='crop'?'kg/kg':'kg/ha')+'</span></div>'
+            +'<div class="dmwrap"><input type="number" data-s="'+i+'" data-f="dm" value="'+st.dm+'" step="any" min="0"><span>% dry</span></div>'
+          +'</div>'
+        +'</div>'
+        +'<div class="f">'
+          +'<label>% turned into biochar</label>'
+          +'<div class="sl"><span>0</span><input type="range" data-s="'+i+'" data-f="share" min="0" max="100" value="'+st.share+'"><span>100</span></div>'
+        +'</div>'
+        +'<div class="f">'
+          +'<label>Carbon content</label>'
+          +'<div class="ib hasu"><input type="number" data-s="'+i+'" data-f="oc" value="'+st.oc+'" step="any" min="0" max="100"><span class="u">%</span></div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="fate">'
+        +'<div class="fatehd">'
+          +'<h4>'+st.name+' \u2014 what happens to it today</h4>'
+          +'<span class="sum'+(sum===100?'':' bad')+'">Sum: '+sum+'%</span>'
+        +'</div>'
+        +'<div class="r4">'
+          +st.fate.map(function(v,j){return '<div class="f"><label>'+FATES[j]+'</label>'
+            +'<div class="ib hasu"><input type="number" data-s="'+i+'" data-fate="'+j+'" value="'+v+'" step="any" min="0"><span class="u">%</span></div></div>';}).join('')
+        +'</div>'
+      +'</div>';
+    h.appendChild(d);
+  });
+
+  h.querySelectorAll('input[data-f]').forEach(function(el){el.addEventListener('input',function(e){
+    const i=+e.target.dataset.s;
+    S.streams[i][e.target.dataset.f]=+e.target.value||0;
+    if(e.target.dataset.f==='oc') refreshFactors();
+    update();
+  });});
+  h.querySelectorAll('input[data-fate]').forEach(function(el){el.addEventListener('input',function(e){
+    const i=+e.target.dataset.s;
+    S.streams[i].fate[+e.target.dataset.fate]=+e.target.value||0;
+    const sum=S.streams[i].fate.reduce(function(a,b){return a+b;},0);
+    const b=e.target.closest('.st').querySelector('.sum');
+    b.className='sum'+(sum===100?'':' bad'); b.textContent='Sum: '+sum+'%';
+    update();
+  });});
+}
+function refreshFactors(){
+  const K=KILN[S.kiln], PE=K.P*K.E;
+  document.querySelectorAll('#streams .st').forEach(function(el,i){
+    el.querySelector('.stfac b').textContent=((S.streams[i].oc/100)*C_TO_CO2*PE).toFixed(2);
+  });
+}
+
+/* ================= PLANNER ================= */
+function renderPlan(){
+  const tb=document.getElementById('plBody'); tb.innerHTML='';
+  for(let y=0;y<5;y++){
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>Year '+(y+1)+'</td>'
+      +'<td><input type="number" data-p="y" data-y="'+y+'" value="'+S.plan.y[y]+'" step="any" '+(S.ck.y?'':'disabled')+'></td>'
+      +'<td><input type="number" data-p="f" data-y="'+y+'" value="'+S.plan.f[y]+'" step="any" '+(S.ck.f?'':'disabled')+'></td>'
+      +'<td><input type="number" data-p="s" data-y="'+y+'" value="'+S.plan.s[y]+'" step="any" '+(S.ck.s?'':'disabled')+'></td>';
+    tb.appendChild(tr);
+  }
+  tb.querySelectorAll('input').forEach(function(el){el.addEventListener('input',function(e){
+    S.plan[e.target.dataset.p][+e.target.dataset.y]=+e.target.value||0; update();
+  });});
+}
+function renderFerts(){
+  const g=document.getElementById('fgrid'); g.innerHTML='';
+  FERTS.forEach(function(f){
+    const d=document.createElement('div'); d.className='fitem';
+    d.innerHTML='<span>'+f.n+'</span><input type="number" data-k="'+f.k+'" value="'+S.fert[f.k]+'" min="0" step="any">';
+    g.appendChild(d);
+  });
+  g.querySelectorAll('input').forEach(function(el){el.addEventListener('input',function(e){
+    S.fert[e.target.dataset.k]=+e.target.value||0; update();
+  });});
+}
+function renderYearPills(){
+  const p=document.getElementById('yrPill'); p.innerHTML='';
+  for(let y=1;y<=5;y++){
+    const b=document.createElement('button');
+    b.textContent='Y'+y; b.setAttribute('aria-pressed', y===S.year);
+    b.onclick=(function(yy){return function(){S.year=yy; renderYearPills(); update();};})(y);
+    p.appendChild(b);
+  }
+}
+
+/* ================= PROJECTION ================= */
+function renderProj(){
+  const W=760,H=250,PL=46,PR=14,PT=14,PB=28;
+  const yrs=[0,1,2,3,4].map(compute);
+  const stacks=yrs.map(function(r){return [
+    {v:r.biochar,c:'#0E6E5A'},{v:r.soc,c:'#6E8A2F'},
+    {v:r.avoided,c:'#2E7FA8'},{v:r.inputs,c:'#C2681F'},
+    {v:S.ck.y?r.gain:0,c:'#7A6BC4'}];});
+  const totals=stacks.map(function(s){return s.reduce(function(a,b){return a+b.v;},0);});
+  let cum=0; const cums=yrs.map(function(r){cum+=r.biochar+r.soc; return cum;});
+  const max=Math.max.apply(null,totals.concat(cums,[1]))*1.1;
+  const iw=W-PL-PR, ih=H-PT-PB, bw=iw/5;
+  const yPos=function(v){return PT+ih-(v/max)*ih;};
+
+  const ticks=[0,.25,.5,.75,1].map(function(f){
+    const v=max*f, y=yPos(v);
+    return '<line x1="'+PL+'" y1="'+y+'" x2="'+(W-PR)+'" y2="'+y+'" stroke="#EDEFEC"/>'
+      +'<text x="'+(PL-7)+'" y="'+(y+3.5)+'" text-anchor="end" font-size="9" fill="#9AA5A1">'+Math.round(v)+'</text>';
+  }).join('');
+
+  const bars=stacks.map(function(st,i){
+    const x=PL+i*bw+bw*0.24, w=bw*0.52; let acc=0;
+    return st.filter(function(s){return s.v>0.004;}).map(function(s){
+      const y0=yPos(acc), y1=yPos(acc+s.v); acc+=s.v;
+      return '<rect x="'+x+'" y="'+y1+'" width="'+w+'" height="'+Math.max(0,y0-y1)+'" fill="'+s.c+'"/>';
+    }).join('');
+  }).join('');
+
+  const pts=cums.map(function(v,i){return (PL+i*bw+bw/2)+','+yPos(v);}).join(' ');
+  const line=cums.some(function(v){return v>0.004;})
+    ? '<polyline points="'+pts+'" fill="none" stroke="#1B2A26" stroke-width="1.5"/>'
+      + cums.map(function(v,i){return '<circle cx="'+(PL+i*bw+bw/2)+'" cy="'+yPos(v)+'" r="3" fill="#1B2A26"/>';}).join('')
+    : '';
+
+  const labs=[1,2,3,4,5].map(function(y,i){
+    return '<text x="'+(PL+i*bw+bw/2)+'" y="'+(H-9)+'" text-anchor="middle" font-size="10" fill="#7C8A85">Year '+y+'</text>';}).join('');
+
+  document.getElementById('proj').innerHTML=
+    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block" role="img" aria-label="Five year impact projection">'
+    +ticks+'<line x1="'+PL+'" y1="'+PT+'" x2="'+PL+'" y2="'+(PT+ih)+'" stroke="#D6DAD5"/>'
+    +bars+line+labs
+    +'<text x="12" y="'+(PT+ih/2)+'" transform="rotate(-90 12 '+(PT+ih/2)+')" text-anchor="middle" font-size="9" fill="#9AA5A1">t CO\u2082e</text>'
+    +'</svg>';
+}
+
+/* ================= UPDATE ================= */
+function update(){
+  const r=compute(S.year-1);   // charts follow the chosen year
+  const r5=compute(4);         // summary is always Year 5
+  const foot=S.view==='foot';
+
+  document.getElementById('effT').textContent=f1(r5.cropEff);
+  document.getElementById('hK').textContent=foot?'Carbon footprint':'Net inventory intensity';
+  const head=foot?r5.pcf:r5.net;
+  document.getElementById('hV').textContent=f2(head);
+  const pct=S.base?(1-head/S.base)*100:0;
+  const hd=document.getElementById('hD');
+  hd.className='d'+(pct<0?' up':'');
+  hd.textContent=Math.abs(pct).toFixed(1)+'% '+(pct>=0?'below':'above')+' '+f2(S.base)+' starting footprint';
+  const vn=document.getElementById('vnote');
+  vn.className='vnote'+(foot?'':' warn');
+  vn.textContent=foot
+    ? 'Reductions only. Suitable for a product carbon claim.'
+    : 'Net of reductions and removals. Useful for net-zero tracking \u2014 not a product carbon footprint.';
+
+  document.getElementById('rV').textContent=f2(r5.biochar+r5.soc);
+  document.getElementById('sCh').textContent=f2(r5.biochar);
+  document.getElementById('sAv').textContent=f2(r5.avoided);
+  document.getElementById('sFe').textContent=f2(r5.inputs);
+  document.getElementById('sSo').textContent=f2(r5.soc);
+
+  const sp=S.damp?'3.70 (damp)':'2.14 (dry)';
+  document.getElementById('mmAv').textContent=
+    r5.rows.map(function(x){var f=x.st.fate;
+      return x.st.name+'\n  dry matter   '+f2(x.dm).padStart(9)+' t\n'
+      +'  spread  '+String(f[0]).padStart(3)+'% \u00d7 '+(x.st.n/100).toFixed(4)+' N \u00d7 '+sp+'\n'
+      +'  piles   '+String(f[1]).padStart(3)+'% \u00d7 '+x.st.piles+'\n'
+      +'  compost '+String(f[2]).padStart(3)+'% \u00d7 '+COMPOST+'\n'
+      +'  burned  '+String(f[3]).padStart(3)+'% \u00d7 '+BURNT+'\n'
+      +'  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  subtotal     '+f2(x.avoided).padStart(9)+' t';
+    }).join('\n\n')+'\n\nTOTAL          '+f2(r5.avoided).padStart(9)+' t';
+
+  document.getElementById('mmCh').textContent=
+    'char yield 0.22 \u00b7 '+S.kiln+' kiln (P\u00d7E = '+r5.PE.toFixed(4)+')\n\n'
+    + r5.rows.map(function(x){return x.st.name+'\n  dry matter '+f2(x.dm).padStart(9)+' t\n  stores     '+x.factor.toFixed(3)+' t/t\n'
+      +'  \u00d7 0.22 \u00d7 '+String(x.st.share).padStart(3)+'%\n  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n  subtotal   '+f2(x.biochar).padStart(9)+' t';}).join('\n\n')
+    + '\n\nTOTAL        '+f2(r5.biochar).padStart(9)+' t';
+
+  document.getElementById('mmFe').textContent = S.ck.f
+    ? FERTS.filter(function(f){return +S.fert[f.k]>0;}).map(function(f){return f.n.padEnd(23)+String(S.fert[f.k]).padStart(5)+' kg/ha \u00d7 '+f.ef;}).join('\n')
+      +'\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nsum                  '+r5.fertSum.toFixed(3)+' kg CO\u2082e/ha\n'
+      +'\u00d7 '+S.area+' ha \u00d7 '+r5.redux+'% cut \u00f7 1000\n= '+f2(r5.inputs)+' t CO\u2082e'
+    : 'Tick \u201cFertilizer cut\u201d in the planner to use this.';
+
+  document.getElementById('mmSo').textContent = S.ck.s
+    ? S.area+' ha \u00d7 '+r5.socRate+' t/ha\n= '+f2(r5.soc)+' t CO\u2082e'
+    : 'Tick \u201cSoil carbon\u201d in the planner to use this.';
+
+  const gb=document.getElementById('gainBox');
+  if(S.ck.y && r5.gain>0.005){gb.style.display='block';document.getElementById('sGa').textContent=f2(r5.gain);}
+  else gb.style.display='none';
+
+  document.getElementById('iaTitle').textContent='Impact Analysis (Year '+S.year+')';
+  const vals=[S.base,r.pcf,r.net];
+  let lo=Math.min(0,Math.min.apply(null,vals));
+  let hi=Math.max(0,Math.max.apply(null,vals));
+  if(hi-lo<0.0001) hi=lo+0.0001;
+  const pad=(hi-lo)*0.04; lo-=pad; hi+=pad;
+  const span=hi-lo, zp=(0-lo)/span*100;
+
+  ['z0','z1','z2'].forEach(function(id){document.getElementById(id).style.left=zp+'%';});
+  document.getElementById('zTick').style.left=zp+'%';
+
+  [['bBase','vBase',S.base,'bfill-base'],['bPcf','vPcf',r.pcf,'bfill-pcf'],['bNet','vNet',r.net,'bfill-net']]
+  .forEach(function(a){
+    const el=document.getElementById(a[0]), lab=document.getElementById(a[1]), v=a[2];
+    const neg=v<0;
+    el.className='bf '+a[3];
+    const w=Math.abs(v)/span*100;
+    el.style.left=(neg? zp-w : zp)+'%';
+    el.style.width=w+'%';
+    lab.textContent=f2(v);
+    if(neg && w>12){ lab.style.right='auto'; lab.style.left=(zp-w)+'%'; lab.style.marginLeft='8px'; lab.style.marginRight='0'; lab.style.color='#fff'; }
+    else if(neg)    { lab.style.left='auto'; lab.style.right=(100-(zp-w))+'%'; lab.style.marginRight='7px'; lab.style.marginLeft='0'; lab.style.color=''; }
+    else            { lab.style.right='auto'; lab.style.left=(zp+w)+'%'; lab.style.marginLeft='8px'; lab.style.marginRight='0'; lab.style.color=''; }
+  });
+
+  document.getElementById('mAv').textContent=f2(r.avoided)+' t';
+  document.getElementById('mFe').textContent=f2(r.inputs)+' t';
+  document.getElementById('mCh').textContent=f2(r.biochar)+' t';
+  document.getElementById('mSo').textContent=f2(r.soc)+' t';
+  document.getElementById('mSoRow').style.display=S.ck.s?'flex':'none';
+  const gr=document.getElementById('mGainRow');
+  if(S.ck.y && r.gain>0.005){gr.style.display='block';document.getElementById('mGa').textContent=f2(r.gain)+' t';}
+  else gr.style.display='none';
+
+  renderProj();
+}
+
+/* ================= WIRING ================= */
+function pair(a,b,fa,fb){
+  const A=document.getElementById(a),B=document.getElementById(b);
+  A.onclick=function(){A.setAttribute('aria-pressed',true);B.setAttribute('aria-pressed',false);fa();update();};
+  B.onclick=function(){B.setAttribute('aria-pressed',true);A.setAttribute('aria-pressed',false);fb();update();};
+}
+pair('bCocoa','bCoffee',function(){loadCrop('cocoa');renderStreams();},function(){loadCrop('coffee');renderStreams();});
+pair('bDamp','bDry',function(){S.damp=true;},function(){S.damp=false;});
+pair('bSimple','bInd',function(){S.kiln='simple';refreshFactors();},function(){S.kiln='industrial';refreshFactors();});
+pair('bFoot','bNetV',function(){S.view='foot';},function(){S.view='net';});
+
+document.getElementById('crop').oninput=function(e){S.cropVol=+e.target.value||0;update();};
+document.getElementById('area').oninput=function(e){S.area=+e.target.value||0;update();};
+document.getElementById('pcf0').oninput=function(e){S.base=+e.target.value||0;update();};
+
+[['ckY','y'],['ckF','f'],['ckS','s'],['ckR','r']].forEach(function(a){
+  document.getElementById(a[0]).onchange=function(e){
+    S.ck[a[1]]=e.target.checked;
+    if(a[1]==='f') document.getElementById('fertBlk').style.display=e.target.checked?'block':'none';
+    renderPlan(); update();
+  };
+});
+
+loadCrop('cocoa'); renderStreams(); renderPlan(); renderFerts(); renderYearPills(); update();
+</script>
+</body>
+</html>

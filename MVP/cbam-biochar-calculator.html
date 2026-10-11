@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBAM × Biochar — Steel Break-Even Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --ink:#1c2126;          /* steel charcoal */
+  --ink-soft:#4a525c;
+  --ink-mute:#7d8792;
+  --paper:#f4f4f2;        /* mill-white */
+  --card:#ffffff;
+  --line:#dcdedb;
+  --ember:#d84315;        /* molten */
+  --ember-soft:#fbe9e2;
+  --char:#2e7d5b;         /* biochar green */
+  --char-soft:#e3f0ea;
+  --steel:#37474f;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --sans:'Archivo',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px 80px}
+
+/* ---------- header ---------- */
+header{padding:44px 0 28px;border-bottom:3px solid var(--ink)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember);font-weight:600}
+h1{font-size:clamp(26px,4.5vw,40px);font-weight:800;letter-spacing:-.02em;line-height:1.08;margin:8px 0 10px}
+.sub{color:var(--ink-soft);font-size:15px;max-width:640px}
+
+/* ---------- phase-in ramp (signature) ---------- */
+.ramp{display:flex;align-items:flex-end;gap:4px;margin:26px 0 6px;height:64px}
+.ramp .bar{flex:1;background:var(--ink);opacity:.14;border-radius:2px 2px 0 0;position:relative;transition:opacity .2s}
+.ramp .bar.active{opacity:1;background:var(--ember)}
+.ramp .bar span{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--ink-mute);white-space:nowrap}
+.ramp-caption{font-family:var(--mono);font-size:11px;color:var(--ink-mute);margin-bottom:4px}
+
+/* ---------- layout ---------- */
+main{display:grid;grid-template-columns:340px 1fr;gap:28px;margin-top:32px}
+@media(max-width:840px){main{grid-template-columns:1fr}}
+
+/* ---------- controls ---------- */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:22px}
+.panel h2{font-size:12px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute);font-weight:600;margin-bottom:18px}
+.ctrl{margin-bottom:20px}
+.ctrl:last-child{margin-bottom:0}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;margin-bottom:6px}
+.ctrl label output{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ember)}
+.ctrl .hint{font-size:11.5px;color:var(--ink-mute);margin-top:4px;line-height:1.4}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;appearance:none;background:var(--line);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--ink);border:3px solid var(--card);box-shadow:0 0 0 1.5px var(--ink);cursor:pointer}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--ember)}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;font-family:var(--sans);font-size:12.5px;font-weight:600;padding:9px 6px;border-radius:7px;border:1.5px solid var(--line);background:var(--card);color:var(--ink-soft);cursor:pointer;transition:all .15s}
+.seg button[aria-pressed="true"]{border-color:var(--char);background:var(--char-soft);color:var(--char)}
+.seg button:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+
+/* ---------- results ---------- */
+.hero-card{background:var(--ink);color:var(--paper);border-radius:10px;padding:24px 26px;margin-bottom:20px}
+.hero-card .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9aa6b0;margin-bottom:6px}
+.hero-row{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-end}
+.hero-num{font-family:var(--mono);font-size:46px;font-weight:600;line-height:1;color:#ffb59b}
+.hero-num small{font-size:15px;color:#9aa6b0;font-weight:400}
+.hero-side{font-size:13px;color:#c3ccd4;max-width:280px;line-height:1.5}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.stat .k{font-size:11.5px;color:var(--ink-mute);margin-bottom:4px}
+.stat .v{font-family:var(--mono);font-size:19px;font-weight:600}
+.stat.green .v{color:var(--char)}
+.stat.ember .v{color:var(--ember)}
+
+.chart-block{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin-bottom:20px}
+.chart-block h3{font-size:14px;font-weight:700;margin-bottom:2px}
+.chart-block .note{font-size:12px;color:var(--ink-mute);margin-bottom:12px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11.5px;color:var(--ink-soft);margin-bottom:8px}
+.legend span{display:flex;align-items:center;gap:5px}
+.sw{width:14px;height:3px;display:inline-block;border-radius:1px}
+.chart-wrap{position:relative;height:250px}
+
+/* ---------- table ---------- */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:7px 6px;text-align:right;font-family:var(--mono)}
+th{font-family:var(--sans);font-weight:600;color:var(--ink-mute);font-size:11px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1.5px solid var(--ink)}
+td:first-child,th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid var(--line)}
+tbody tr:last-child{border-bottom:none}
+.pos{color:var(--char);font-weight:600}
+
+/* ---------- methodology ---------- */
+details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin-bottom:14px}
+summary{font-weight:700;font-size:14px;cursor:pointer}
+details p{font-size:13px;color:var(--ink-soft);margin-top:10px;line-height:1.65}
+details code{font-family:var(--mono);font-size:12px;background:var(--paper);padding:1px 5px;border-radius:4px}
+.warn{border-left:3px solid var(--ember);background:var(--ember-soft);border-radius:0 8px 8px 0;padding:14px 18px;font-size:13px;color:var(--ink-soft);line-height:1.6;margin-top:6px}
+footer{margin-top:34px;font-size:12px;color:var(--ink-mute);line-height:1.6}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">EU CBAM · Iron &amp; Steel · Definitive Period 2026–2034</p>
+  <h1>What is biochar worth to a steel importer?</h1>
+  <p class="sub">Substituting biochar for fossil coke cuts a product's embedded emissions — the quantity CBAM prices at the border. This tool computes the resulting saving and the maximum biochar price at which substitution stays cost-neutral, year by year as CBAM phases in.</p>
+  <p class="ramp-caption" style="margin-top:24px">CBAM chargeable share of embedded emissions (official schedule)</p>
+  <div class="ramp" id="ramp" aria-hidden="true"></div>
+</header>
+
+<main>
+  <!-- ============ CONTROLS ============ -->
+  <aside class="panel" aria-label="Model inputs">
+    <h2>Inputs</h2>
+
+    <div class="ctrl">
+      <label for="eua">EUA / certificate price <output id="eua-out">€75</output></label>
+      <input type="range" id="eua" min="40" max="150" step="1" value="75">
+      <p class="hint">CBAM certificates track the EU ETS price (quarterly avg 2026, weekly from 2027).</p>
+    </div>
+
+    <div class="ctrl">
+      <label for="see">Embedded emissions (direct) <output id="see-out">1.90 t/t</output></label>
+      <input type="range" id="see" min="0.4" max="2.5" step="0.05" value="1.9">
+      <p class="hint">tCO₂e per tonne of product. BF-BOF ≈ 1.8–2.1; EAF ≈ 0.4–0.7. Steel CBAM prices direct emissions only.</p>
+    </div>
+
+    <div class="ctrl">
+      <label for="sub">Biochar substitution <output id="sub-out">10%</output></label>
+      <input type="range" id="sub" min="0" max="20" step="0.5" value="10">
+      <p class="hint">Share of fossil reductant replaced. Industrial PCI trials run at 10%+; ~20% is a realistic BF ceiling.</p>
+    </div>
+
+    <div class="ctrl">
+      <label for="use">Reductant use <output id="use-out">450 kg/t</output></label>
+      <input type="range" id="use" min="200" max="600" step="10" value="450">
+      <p class="hint">Fossil coke/coal consumed per tonne of product.</p>
+    </div>
+
+    <div class="ctrl">
+      <label for="foss">Fossil reductant price <output id="foss-out">€350</output></label>
+      <input type="range" id="foss" min="150" max="600" step="10" value="350">
+      <p class="hint">Delivered price of the coke/coal biochar replaces — the floor of the break-even.</p>
+    </div>
+
+    <div class="ctrl">
+      <label for="vol">Import volume <output id="vol-out">50,000 t/yr</output></label>
+      <input type="range" id="vol" min="5000" max="200000" step="5000" value="50000">
+    </div>
+
+    <div class="ctrl">
+      <label id="bio-label">Biochar CBAM intensity</label>
+      <div class="seg" role="group" aria-labelledby="bio-label">
+        <button id="mode-zero" aria-pressed="true">Biogenic ~0</button>
+        <button id="mode-cons" aria-pressed="false">Conservative 0.30</button>
+      </div>
+      <p class="hint">Zero-rating of biogenic carbon carries sustainability conditions — verify per supply chain.</p>
+    </div>
+  </aside>
+
+  <!-- ============ RESULTS ============ -->
+  <section aria-label="Results">
+    <div class="hero-card">
+      <p class="lbl">Break-even biochar price — <span id="hero-year">2030</span> · selected assumption</p>
+      <div class="hero-row">
+        <p class="hero-num"><span id="hero-be">€463</span><small> /t biochar</small></p>
+        <p class="hero-side" id="hero-side">= €350 fossil floor + €113 tolerable premium. Pay less than this and biochar is profitable before any green-steel premium.</p>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="stat ember"><p class="k">CBAM cost/t · 2026</p><p class="v" id="c26">€3.56</p></div>
+      <div class="stat ember"><p class="k">CBAM cost/t · 2030</p><p class="v" id="c30">€69</p></div>
+      <div class="stat ember"><p class="k">CBAM cost/t · 2034</p><p class="v" id="c34">€143</p></div>
+      <div class="stat green"><p class="k">Annual saving · 2030</p><p class="v" id="a30">€254k</p></div>
+    </div>
+
+    <div class="chart-block">
+      <h3>Break-even biochar price, 2026 → 2034</h3>
+      <p class="note">Rises every year as the chargeable share climbs from 2.5% to 100% — each avoided tonne of CO₂ is worth more as CBAM bites harder.</p>
+      <div class="legend">
+        <span><span class="sw" style="background:#2e7d5b"></span>Biogenic ~0</span>
+        <span><span class="sw" style="background:#c98500"></span>Conservative 0.30</span>
+        <span><span class="sw" style="border-top:2px dashed #7d8792;height:0"></span>Fossil floor</span>
+      </div>
+      <div class="chart-wrap"><canvas id="beChart" role="img" aria-label="Break-even biochar price by year for both intensity assumptions, rising from just above the fossil floor in 2026 to a maximum in 2034."></canvas></div>
+    </div>
+
+    <div class="chart-block">
+      <h3>Annual CBAM saving from biochar, € per year</h3>
+      <p class="note">Scales with substitution rate and volume; grows every year with the phase-in.</p>
+      <div class="chart-wrap"><canvas id="savChart" role="img" aria-label="Annual CBAM saving in euros per year, growing from 2026 to 2034."></canvas></div>
+    </div>
+
+    <div class="chart-block">
+      <h3>Year-by-year detail — selected assumption</h3>
+      <div style="overflow-x:auto">
+      <table id="tbl">
+        <thead><tr><th>Year</th><th>Charged %</th><th>CBAM €/t</th><th>Saving €/t</th><th>Break-even €/t biochar</th><th>Annual saving</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ METHODOLOGY ============ -->
+<section style="margin-top:34px" aria-label="Methodology">
+  <details open>
+    <summary>Methodology &amp; formula</summary>
+    <p><strong>CBAM cost</strong> per tonne of product = <code>SEE × chargeable share × EUA price</code>, where SEE is the specific embedded (direct) emissions and the chargeable share follows the official phase-in: 2.5% (2026), 5%, 10%, 22.5%, 48.5%, 61%, 73.5%, 86%, 100% (2034) — the mirror of the EU ETS free-allocation phase-out (CBAM factor 97.5% → 0%). This structure reproduces published worked examples exactly (e.g. 10,000 t × 1.9 tCO₂e/t × 2.5% × €70 = €33,250 for 2026; €72.75/t for SEE 2.0 at 48.5% and €75).</p>
+    <p><strong>Biochar effect:</strong> substituting biochar for fossil reductant lowers SEE by <code>replaced tonnage × (3.10 − biochar intensity)</code> tCO₂e/t. The CBAM saving is the cost difference between baseline and reduced SEE. The <strong>break-even biochar price</strong> = fossil reductant price + (saving ÷ tonnes of reductant replaced) — the most you can pay per tonne of biochar and stay cost-neutral on CBAM alone.</p>
+    <p><strong>What this deliberately excludes:</strong> green-steel price premiums (+5–20% reported in early offtakes), carbon prices already paid in the origin country (deductible under Art. 9), and default-value mark-ups (10–30% if verified data is missing). All three shift the economics further in biochar's favour or against defaults.</p>
+  </details>
+  <div class="warn">
+    <strong>Before relying on these numbers:</strong> biochar is not an offset against CBAM — it works only by reducing actual embedded emissions. Biogenic zero-rating carries sustainability and documentation conditions that must hold for your specific supply chain. The fossil-reductant emission factor (3.10) and reductant use are engineering defaults, not audited figures. Free-allocation benchmarks under the SEFA methodology (IR 2025/2620) are product- and route-specific; this tool uses the standard simplification (chargeable share × SEE) that published cost models use. For declarations, use verified installation data and professional advice.
+  </div>
+</section>
+
+<footer>
+  Constants verified against Regulation (EU) 2023/956 as amended by (EU) 2025/2083, the published CBAM-factor schedule, and independent worked examples (Jan 2026 rules). Model is for planning and scenario analysis, not CBAM declarations. Rules evolve — re-verify the schedule and ETS price before decisions.
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- verified constants ---------- */
+const YEARS=[2026,2027,2028,2029,2030,2031,2032,2033,2034];
+const SHARE=[0.025,0.05,0.10,0.225,0.485,0.61,0.735,0.86,1.00]; /* chargeable share, official */
+const FOSS_EF=3.10;
+const BIO_EF={zero:0.0, cons:0.30};
+
+/* ---------- state ---------- */
+let mode='zero';
+const $=id=>document.getElementById(id);
+const el={eua:$('eua'),see:$('see'),sub:$('sub'),use:$('use'),foss:$('foss'),vol:$('vol')};
+const eur=n=>'€'+Math.round(n).toLocaleString('en-US');
+const eur2=n=>'€'+n.toFixed(2);
+const compact=n=>Math.abs(n)>=1e6?'€'+(n/1e6).toFixed(2)+'M':Math.abs(n)>=1e3?'€'+(n/1e3).toFixed(0)+'k':eur(n);
+
+/* ---------- engine (verified) ---------- */
+function run(bioEF){
+  const eua=+el.eua.value, see=+el.see.value, sub=+el.sub.value/100,
+        use=+el.use.value, foss=+el.foss.value, vol=+el.vol.value;
+  const reduct=use*sub/1000;                       /* t reductant replaced / t product */
+  const emRed=reduct*(FOSS_EF-bioEF);              /* tCO2e/t product removed */
+  const rows=YEARS.map((y,k)=>{
+    const base=see*SHARE[k]*eua;
+    const nw=Math.max(0,see-emRed)*SHARE[k]*eua;
+    const sav=base-nw;
+    const prem=reduct>0?sav/reduct:0;
+    return {year:y,share:SHARE[k],base,sav,be:foss+prem,annual:sav*vol};
+  });
+  return {rows,foss,reduct};
+}
+
+/* ---------- ramp ---------- */
+const ramp=$('ramp');
+YEARS.forEach((y,k)=>{
+  const b=document.createElement('div');
+  b.className='bar'+(k===4?' active':'');
+  b.style.height=(SHARE[k]*100)+'%';
+  b.innerHTML='<span>'+(k===0||k===4||k===8?y:'')+'</span>';
+  ramp.appendChild(b);
+});
+
+/* ---------- charts ---------- */
+const muted='#7d8792';
+Chart.defaults.font.family="'JetBrains Mono',monospace";
+Chart.defaults.font.size=11;
+const beChart=new Chart($('beChart'),{type:'line',data:{labels:YEARS.map(String),datasets:[
+  {label:'Biogenic ~0',data:[],borderColor:'#2e7d5b',backgroundColor:'rgba(46,125,91,.07)',borderWidth:3,fill:true,tension:.25,pointRadius:3,pointBackgroundColor:'#2e7d5b',pointBorderColor:'#fff',pointBorderWidth:2},
+  {label:'Conservative 0.30',data:[],borderColor:'#c98500',borderWidth:2,borderDash:[3,3],fill:false,tension:.25,pointRadius:3,pointBackgroundColor:'#c98500',pointBorderColor:'#fff',pointBorderWidth:2},
+  {label:'Fossil floor',data:[],borderColor:muted,borderWidth:1.5,borderDash:[6,5],fill:false,pointRadius:0}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+eur(c.parsed.y)+'/t'}}},
+  scales:{y:{ticks:{color:muted,callback:v=>'€'+v},grid:{color:'rgba(125,135,146,.15)'}},
+          x:{ticks:{color:muted,autoSkip:false},grid:{display:false}}}}});
+const savChart=new Chart($('savChart'),{type:'bar',data:{labels:YEARS.map(String),datasets:[
+  {label:'Annual saving',data:[],backgroundColor:'#37474f',hoverBackgroundColor:'#d84315',borderRadius:3,maxBarThickness:30}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Saving: '+compact(c.parsed.y)+'/yr'}}},
+  scales:{y:{beginAtZero:true,ticks:{color:muted,callback:v=>compact(v)},grid:{color:'rgba(125,135,146,.15)'}},
+          x:{ticks:{color:muted,autoSkip:false},grid:{display:false}}}}});
+
+/* ---------- render ---------- */
+function readouts(){
+  $('eua-out').textContent='€'+el.eua.value;
+  $('see-out').textContent=(+el.see.value).toFixed(2)+' t/t';
+  const s=+el.sub.value; $('sub-out').textContent=(s%1?s.toFixed(1):s)+'%';
+  $('use-out').textContent=el.use.value+' kg/t';
+  $('foss-out').textContent='€'+el.foss.value;
+  $('vol-out').textContent=(+el.vol.value).toLocaleString('en-US')+' t/yr';
+}
+function update(){
+  readouts();
+  const Z=run(BIO_EF.zero), C=run(BIO_EF.cons);
+  const sel=(mode==='zero'?Z:C);
+  /* hero: 2030 as the pivotal year */
+  const h=sel.rows[4];
+  $('hero-year').textContent='2030';
+  $('hero-be').textContent=eur(h.be);
+  $('hero-side').textContent='= '+eur(sel.foss)+' fossil floor + '+eur(h.be-sel.foss)+
+    ' tolerable premium. Pay less than this and biochar is profitable on CBAM alone.';
+  /* stat cards */
+  $('c26').textContent=eur2(sel.rows[0].base);
+  $('c30').textContent=eur(sel.rows[4].base);
+  $('c34').textContent=eur(sel.rows[8].base);
+  $('a30').textContent=compact(sel.rows[4].annual);
+  /* charts */
+  beChart.data.datasets[0].data=Z.rows.map(r=>r.be);
+  beChart.data.datasets[1].data=C.rows.map(r=>r.be);
+  beChart.data.datasets[2].data=YEARS.map(()=>Z.foss);
+  beChart.data.datasets[0].borderWidth=mode==='zero'?3:2;
+  beChart.data.datasets[1].borderWidth=mode==='cons'?3:2;
+  beChart.update('none');
+  savChart.data.datasets[0].data=sel.rows.map(r=>r.annual);
+  savChart.update('none');
+  /* table */
+  const tb=$('tbl').querySelector('tbody'); tb.innerHTML='';
+  sel.rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+r.year+'</td><td>'+(r.share*100).toFixed(1)+'%</td><td>'+eur2(r.base)+
+      '</td><td>'+eur2(r.sav)+'</td><td class="pos">'+eur(r.be)+'</td><td>'+compact(r.annual)+'</td>';
+    tb.appendChild(tr);
+  });
+}
+function setMode(m){
+  mode=m;
+  $('mode-zero').setAttribute('aria-pressed',m==='zero');
+  $('mode-cons').setAttribute('aria-pressed',m==='cons');
+  update();
+}
+Object.values(el).forEach(i=>i.addEventListener('input',update));
+$('mode-zero').addEventListener('click',()=>setMode('zero'));
+$('mode-cons').addEventListener('click',()=>setMode('cons'));
+update();
+})();
+</script>
+</body>
+</html>
